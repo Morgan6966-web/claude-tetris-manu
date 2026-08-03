@@ -160,3 +160,108 @@ kbd {
 #restart-btn:hover {
   background: #9bbdff;
 }
+
+/* ---- Selector de skin ---- */
+#skin-select {
+  background: #22223a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---- Skin: Neon ---- */
+body[data-skin="neon"] {
+  background: #000000;
+}
+
+body[data-skin="neon"] .game-title {
+  color: #0ff0fc;
+  text-shadow: 0 0 10px #0ff0fc, 0 0 24px #0ff0fc, 0 0 48px rgba(0, 240, 252, 0.6);
+}
+
+body[data-skin="neon"] #board,
+body[data-skin="neon"] #next-canvas {
+  background: #000000;
+  border-color: #0ff0fc;
+  box-shadow: 0 0 24px rgba(0, 240, 252, 0.5);
+}
+
+body[data-skin="neon"] .value {
+  color: #0ff0fc;
+}
+
+body[data-skin="neon"] #skin-select {
+  background: #000;
+  border-color: #0ff0fc;
+  color: #0ff0fc;
+}
+
+/* ---- Skin: Pastel ---- */
+body[data-skin="pastel"] {
+  background: #fdf6f0;
+  color: #6b5b73;
+}
+
+body[data-skin="pastel"] .game-title {
+  color: #c98bd9;
+  text-shadow: none;
+}
+
+body[data-skin="pastel"] #board,
+body[data-skin="pastel"] #next-canvas {
+  background: #fffaf5;
+  border-color: #e6d5f0;
+  box-shadow: 0 0 20px rgba(201, 139, 217, 0.15);
+}
+
+body[data-skin="pastel"] .label {
+  color: #b3a3bb;
+}
+
+body[data-skin="pastel"] .value {
+  color: #c98bd9;
+}
+
+body[data-skin="pastel"] .controls li {
+  color: #9a8aa2;
+}
+
+body[data-skin="pastel"] kbd {
+  background: #f3e6f7;
+  border-color: #e6d5f0;
+  color: #8a7a92;
+}
+
+body[data-skin="pastel"] #skin-select {
+  background: #fff;
+  border-color: #e6d5f0;
+  color: #6b5b73;
+}
+
+body[data-skin="pastel"] #restart-btn {
+  background: #c98bd9;
+  color: #fff;
+}
+
+body[data-skin="pastel"] #restart-btn:hover {
+  background: #d9a8e6;
+}
+
+/* ---- Skin: Pixel art ---- */
+body[data-skin="pixel"] {
+  background: #14141f;
+}
+
+body[data-skin="pixel"] .game-title {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+body[data-skin="pixel"] #board,
+body[data-skin="pixel"] #next-canvas {
+  image-rendering: pixelated;
+  border-color: #444;
+}
