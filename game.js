@@ -26,7 +26,22 @@ const PIECES = [
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
 ];
 
+// Paleta suave usada por el skin "pastel" (mismos índices que COLORS)
+const PASTEL_COLORS = [
+  null,
+  '#a8dadc', // I
+  '#fff3b0', // O
+  '#d8bbff', // T
+  '#b8e6b8', // S
+  '#ffb3ba', // Z
+  '#b3c6ff', // J
+  '#ffd8a8', // L
+];
+
 const LINE_SCORES = [0, 100, 300, 500, 800];
+
+const SKIN_STORAGE_KEY = 'tetris-skin';
+const SKINS = ['retro', 'neon', 'pastel', 'pixel'];
 
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -39,8 +54,21 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const skinSelect = document.getElementById('skin-select');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, lastTime, dropAccum, dropInterval, animId;
+let paused = false;
+let gameOver = false;
+let currentSkin = 'retro';
+
+function setSkin(skin) {
+  currentSkin = SKINS.includes(skin) ? skin : 'retro';
+  document.body.dataset.skin = currentSkin;
+  if (skinSelect) skinSelect.value = currentSkin;
+  localStorage.setItem(SKIN_STORAGE_KEY, currentSkin);
+  // El loop redibuja cada frame; si está pausado o hay game over, forzamos un redraw inmediato.
+  if (paused || gameOver) draw();
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -156,15 +184,99 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
-function drawBlock(context, x, y, colorIndex, size, alpha) {
-  if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
+function drawRetroBlock(context, px, py, size, color) {
   context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillRect(px + 1, py + 1, size - 2, size - 2);
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.fillRect(px + 1, py + 1, size - 2, 4);
+}
+
+function drawNeonBlock(context, px, py, size, color) {
+  context.save();
+  context.shadowBlur = size * 0.5;
+  context.shadowColor = color;
+  context.fillStyle = color;
+  context.fillRect(px + 2, py + 2, size - 4, size - 4);
+  context.restore();
+  context.fillStyle = 'rgba(255,255,255,0.25)';
+  context.fillRect(px + 2, py + 2, size - 4, 3);
+}
+
+// Se comprueba una única vez (no cambia en tiempo de ejecución) en vez de en cada bloque dibujado.
+const SUPPORTS_ROUND_RECT = typeof ctx.roundRect === 'function';
+
+function drawPastelBlock(context, px, py, size, color) {
+  const radius = size * 0.2;
+  const rx = px + 1;
+  const ry = py + 1;
+  const w = size - 2;
+  const h = size - 2;
+  context.fillStyle = color;
+  context.beginPath();
+  if (SUPPORTS_ROUND_RECT) {
+    context.roundRect(rx, ry, w, h, radius);
+  } else {
+    context.moveTo(rx + radius, ry);
+    context.arcTo(rx + w, ry, rx + w, ry + h, radius);
+    context.arcTo(rx + w, ry + h, rx, ry + h, radius);
+    context.arcTo(rx, ry + h, rx, ry, radius);
+    context.arcTo(rx, ry, rx + w, ry, radius);
+    context.closePath();
+  }
+  context.fill();
+  context.fillStyle = 'rgba(255,255,255,0.35)';
+  context.beginPath();
+  context.arc(rx + w * 0.3, ry + h * 0.3, size * 0.14, 0, Math.PI * 2);
+  context.fill();
+}
+
+// El paso del patrón solo depende de `size` (constante por canvas); se cachea por tamaño
+// para no recalcularlo en cada bloque de cada frame.
+const pixelStepCache = new Map();
+function getPixelStep(size) {
+  if (!pixelStepCache.has(size)) {
+    pixelStepCache.set(size, Math.max(4, Math.floor(size / 6)));
+  }
+  return pixelStepCache.get(size);
+}
+
+function drawPixelBlock(context, px, py, size, color) {
+  context.fillStyle = color;
+  context.fillRect(px + 1, py + 1, size - 2, size - 2);
+  const step = getPixelStep(size);
+  context.fillStyle = 'rgba(0,0,0,0.15)';
+  for (let gx = px + 1; gx < px + size - 1; gx += step) {
+    for (let gy = py + 1; gy < py + size - 1; gy += step) {
+      const cellIndex = Math.floor((gx - px) / step) + Math.floor((gy - py) / step);
+      if (cellIndex % 2 === 0) {
+        const w = Math.min(step - 1, px + size - 1 - gx);
+        const h = Math.min(step - 1, py + size - 1 - gy);
+        if (w > 0 && h > 0) context.fillRect(gx, gy, w, h);
+      }
+    }
+  }
+  context.strokeStyle = 'rgba(0,0,0,0.4)';
+  context.lineWidth = 1;
+  context.strokeRect(px + 1, py + 1, size - 2, size - 2);
+}
+
+// Tabla de despliegue: cada skin declara su función de dibujo y su paleta de colores.
+// Añadir un skin nuevo es puramente aditivo (no toca el if/else de drawBlock).
+const SKIN_RENDERERS = {
+  retro: { draw: drawRetroBlock, colors: COLORS },
+  neon: { draw: drawNeonBlock, colors: COLORS },
+  pastel: { draw: drawPastelBlock, colors: PASTEL_COLORS },
+  pixel: { draw: drawPixelBlock, colors: COLORS },
+};
+
+function drawBlock(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const px = x * size;
+  const py = y * size;
+  context.globalAlpha = alpha ?? 1;
+  const renderer = SKIN_RENDERERS[currentSkin] || SKIN_RENDERERS.retro;
+  renderer.draw(context, px, py, size, renderer.colors[colorIndex]);
   context.globalAlpha = 1;
 }
 
@@ -300,5 +412,12 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+if (skinSelect) {
+  skinSelect.addEventListener('change', () => setSkin(skinSelect.value));
+}
+
+const savedSkin = localStorage.getItem(SKIN_STORAGE_KEY);
+setSkin(SKINS.includes(savedSkin) ? savedSkin : 'retro');
 
 init();
