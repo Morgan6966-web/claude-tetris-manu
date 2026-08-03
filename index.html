@@ -41,6 +41,13 @@
             <li><kbd>P</kbd> pausa</li>
           </ul>
         </div>
+
+        <div class="panel-section records-section">
+          <span class="label">RECORDS</span>
+          <ol id="records-list" class="records-list"></ol>
+          <span class="records-stat">Máx. líneas: <strong id="max-lines-stat">0</strong></span>
+          <button id="reset-records-btn" class="reset-btn">Resetear records</button>
+        </div>
       </aside>
     </div>
 
@@ -48,6 +55,14 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+
+        <div id="save-score-form" class="save-score-form hidden">
+          <input type="text" id="player-name" class="player-name-input" maxlength="12" placeholder="Tu nombre" autocomplete="off" />
+          <button id="save-score-btn">Guardar record</button>
+        </div>
+
+        <ol id="overlay-records-list" class="records-list hidden"></ol>
+
         <button id="restart-btn">Reiniciar</button>
       </div>
     </div>
